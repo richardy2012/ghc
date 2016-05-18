@@ -9,7 +9,7 @@
 #ifndef POSIXSOURCE_H
 #define POSIXSOURCE_H
 
-#include <ghcplatform.h>
+#include <MachineDefines.h>
 
 /* We aim for C99 so we need to define following two defines in a consistent way
    with what POSIX/XOPEN provide for C99. Some OSes are particularly picky about
@@ -27,7 +27,7 @@
 
 #define __USE_MINGW_ANSI_STDIO 1
 
-#if defined(darwin_HOST_OS)
+#if darwin_HOST_OS
 /* If we don't define this the including sysctl breaks with things like
     /usr/include/bsm/audit.h:224:0:
          error: syntax error before 'u_char'

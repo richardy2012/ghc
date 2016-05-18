@@ -9,7 +9,7 @@
 
 #include "PosixSource.h"
 
-#if defined(freebsd_HOST_OS)
+#if freebsd_HOST_OS
 /* Inclusion of system headers usually requires __BSD_VISIBLE on FreeBSD,
  * because of some specific types, like u_char, u_int, etc. */
 #define __BSD_VISIBLE   1
@@ -17,7 +17,7 @@
 
 #include "Rts.h"
 
-#if defined(linux_HOST_OS)
+#if linux_HOST_OS
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
@@ -25,7 +25,7 @@
 
 #if defined(HAVE_PTHREAD_H)
 #include <pthread.h>
-#if defined(freebsd_HOST_OS)
+#if freebsd_HOST_OS
 #include <pthread_np.h>
 #endif
 #endif
@@ -38,7 +38,7 @@
 #include <string.h>
 #endif
 
-#if defined(darwin_HOST_OS) || defined(freebsd_HOST_OS)
+#if darwin_HOST_OS || freebsd_HOST_OS
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #endif
@@ -62,7 +62,7 @@
 #include <unistd.h>
 #endif
 
-#if defined(darwin_HOST_OS)
+#if darwin_HOST_OS
 #include <mach/mach.h>
 #endif
 
@@ -133,7 +133,7 @@ createOSThread (OSThreadId* pId, char *name STG_UNUSED,
   int result = pthread_create(pId, NULL, (void *(*)(void *))startProc, param);
   if (!result) {
     pthread_detach(*pId);
-#if HAVE_PTHREAD_SETNAME_NP
+#ifdef HAVE_PTHREAD_SETNAME_NP
     pthread_setname_np(*pId, name);
 #endif
   }
@@ -241,13 +241,13 @@ getNumberOfProcessors (void)
         nproc = sysconf(_SC_NPROCESSORS_ONLN);
 #elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_CONF)
         nproc = sysconf(_SC_NPROCESSORS_CONF);
-#elif defined(darwin_HOST_OS)
+#elif darwin_HOST_OS
         size_t size = sizeof(uint32_t);
         if(sysctlbyname("hw.logicalcpu",&nproc,&size,NULL,0) != 0) {
             if(sysctlbyname("hw.ncpu",&nproc,&size,NULL,0) != 0)
                 nproc = 1;
         }
-#elif defined(freebsd_HOST_OS)
+#elif freebsd_HOST_OS
         size_t size = sizeof(uint32_t);
         if(sysctlbyname("hw.ncpu",&nproc,&size,NULL,0) != 0)
             nproc = 1;
@@ -278,7 +278,7 @@ setThreadAffinity (uint32_t n, uint32_t m)
     sched_setaffinity(0, sizeof(cpu_set_t), &cs);
 }
 
-#elif defined(darwin_HOST_OS) && defined(THREAD_AFFINITY_POLICY)
+#elif darwin_HOST_OS && defined(THREAD_AFFINITY_POLICY)
 // Schedules the current thread in the affinity set identified by tag n.
 void
 setThreadAffinity (uint32_t n, uint32_t m GNUC3_ATTRIBUTE(__unused__))
@@ -363,16 +363,16 @@ uint32_t getNumberOfProcessors (void)
 
 KernelThreadId kernelThreadId (void)
 {
-#if defined(linux_HOST_OS)
+#if linux_HOST_OS
     pid_t tid = syscall(SYS_gettid); // no really, see man gettid
     return (KernelThreadId) tid;
 
 /* FreeBSD 9.0+ */
-#elif defined(freebsd_HOST_OS) && (__FreeBSD_version >= 900031)
+#elif freebsd_HOST_OS && (__FreeBSD_version >= 900031)
     return pthread_getthreadid_np();
 
 // Check for OS X >= 10.6 (see #7356)
-#elif defined(darwin_HOST_OS) && \
+#elif darwin_HOST_OS && \
        !(defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && \
          __MAC_OS_X_VERSION_MIN_REQUIRED < 1060)
     uint64_t ktid;

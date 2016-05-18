@@ -29,12 +29,15 @@
 #include "Trace.h"
 #include "GC.h"
 #include "Evac.h"
-#if defined(ios_HOST_OS)
+#if ios_HOST_OS
 #include "Hash.h"
 #endif
 
 #include <string.h>
 
+#ifndef _CALL_ELF
+#define _CALL_ELF 0
+#endif
 #include "ffi.h"
 
 /*
@@ -1320,7 +1323,7 @@ calcNeeded (rtsBool force_major, memcount *blocks_needed)
          should be modified to use allocateExec instead of VirtualAlloc.
    ------------------------------------------------------------------------- */
 
-#if (defined(arm_HOST_ARCH) || defined(aarch64_HOST_ARCH)) && defined(ios_HOST_OS)
+#if (arm_HOST_ARCH || aarch64_HOST_ARCH) && ios_HOST_OS
 void sys_icache_invalidate(void *start, size_t len);
 #endif
 
@@ -1328,11 +1331,11 @@ void sys_icache_invalidate(void *start, size_t len);
    writing code into memory, so the processor reliably sees it. */
 void flushExec (W_ len, AdjustorExecutable exec_addr)
 {
-#if defined(i386_HOST_ARCH) || defined(x86_64_HOST_ARCH)
+#if i386_HOST_ARCH || x86_64_HOST_ARCH
   /* x86 doesn't need to do anything, so just suppress some warnings. */
   (void)len;
   (void)exec_addr;
-#elif (defined(arm_HOST_ARCH) || defined(aarch64_HOST_ARCH)) && defined(ios_HOST_OS)
+#elif (arm_HOST_ARCH || aarch64_HOST_ARCH) && ios_HOST_OS
   /* On iOS we need to use the special 'sys_icache_invalidate' call. */
   sys_icache_invalidate(exec_addr, ((unsigned char*)exec_addr)+len);
 #elif defined(__GNUC__)
@@ -1345,7 +1348,7 @@ void flushExec (W_ len, AdjustorExecutable exec_addr)
 #endif
 }
 
-#if defined(linux_HOST_OS)
+#if linux_HOST_OS
 
 // On Linux we need to use libffi for allocating executable memory,
 // because it knows how to work around the restrictions put in place
@@ -1373,7 +1376,7 @@ void freeExec (AdjustorExecutable addr)
     RELEASE_SM_LOCK
 }
 
-#elif defined(ios_HOST_OS)
+#elif ios_HOST_OS
 
 static HashTable* allocatedExecs;
 

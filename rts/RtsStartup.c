@@ -41,11 +41,11 @@
 # include "RetainerProfile.h"
 #endif
 
-#if defined(mingw32_HOST_OS) && !defined(THREADED_RTS)
+#if mingw32_HOST_OS && !defined(THREADED_RTS)
 #include "win32/AsyncIO.h"
 #endif
 
-#if !defined(mingw32_HOST_OS)
+#if !mingw32_HOST_OS
 #include "posix/TTY.h"
 #endif
 
@@ -205,7 +205,7 @@ hs_init_ghc(int *argc, char **argv[], RtsConfig rts_config)
     getStablePtr((StgPtr)runSparks_closure);
     getStablePtr((StgPtr)ensureIOManagerIsRunning_closure);
     getStablePtr((StgPtr)ioManagerCapabilitiesChanged_closure);
-#ifndef mingw32_HOST_OS
+#if !mingw32_HOST_OS
     getStablePtr((StgPtr)blockedOnBadFD_closure);
     getStablePtr((StgPtr)runHandlersPtr_closure);
 #endif
@@ -236,7 +236,7 @@ hs_init_ghc(int *argc, char **argv[], RtsConfig rts_config)
     }
 #endif
 
-#if defined(mingw32_HOST_OS) && !defined(THREADED_RTS)
+#if mingw32_HOST_OS && !defined(THREADED_RTS)
     startupAsyncIO();
 #endif
 
@@ -348,7 +348,7 @@ hs_exit_(rtsBool wait_foreign)
     exitTimer(rtsTrue);
 
     // set the terminal settings back to what they were
-#if !defined(mingw32_HOST_OS)
+#if !mingw32_HOST_OS
     resetTerminalSettings();
 #endif
 
@@ -418,7 +418,7 @@ hs_exit_(rtsBool wait_foreign)
     if (tf != NULL) fclose(tf);
 #endif
 
-#if defined(mingw32_HOST_OS) && !defined(THREADED_RTS)
+#if mingw32_HOST_OS && !defined(THREADED_RTS)
     shutdownAsyncIO(wait_foreign);
 #endif
 
@@ -476,7 +476,7 @@ shutdownHaskellAndExit(int n, int fastExit)
     stg_exit(n);
 }
 
-#ifndef mingw32_HOST_OS
+#if !mingw32_HOST_OS
 static void exitBySignal(int sig) GNUC3_ATTRIBUTE(__noreturn__);
 
 void

@@ -747,12 +747,12 @@ threadStackUnderflow (Capability *cap, StgTSO *tso)
  * Debugging: why is a thread blocked
  * ------------------------------------------------------------------------- */
 
-#if DEBUG
+#ifdef DEBUG
 void
 printThreadBlockage(StgTSO *tso)
 {
   switch (tso->why_blocked) {
-#if defined(mingw32_HOST_OS)
+#if mingw32_HOST_OS
     case BlockedOnDoProc:
     debugBelch("is blocked on proc (request: %u)", tso->block_info.async_result->reqID);
     break;
