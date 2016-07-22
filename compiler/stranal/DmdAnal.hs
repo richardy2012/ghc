@@ -495,8 +495,12 @@ dmdFix top_lvl env orig_pairs
     -- If fixed-point iteration does not yield a result we use this instead
     -- See Note [Safe abortion in the fixed-point iteration]
     abort :: (AnalEnv, DmdEnv, [(Id,CoreExpr)])
-    abort = (env, lazy_fv, zapIdStrictness pairs')
+    abort = (env, lazy_fv', zapped_pairs)
       where (lazy_fv, pairs') = step True (zapIdStrictness orig_pairs)
+            -- Note [Lazy and unleasheable free variables]
+            non_lazy_fvs = plusVarEnvList $ map (strictSigDmdEnv . idStrictness . fst) pairs'
+            lazy_fv'     = lazy_fv `plusVarEnv` mapVarEnv (const topDmd) non_lazy_fvs
+            zapped_pairs = zapIdStrictness pairs'
 
     -- The fixed-point varies the idStrictness field of the binders, and terminates if that
     -- annotation does not change any more.
@@ -544,7 +548,7 @@ Fixed-point iteration may fail to terminate. But we cannot simply give up and
 return the environment and code unchanged! We still need to do one additional
 round, for two reasons:
 
- * To get information on used free variables
+ * To get information on used free variables (both lazy and strict!)
    (see Note [Lazy and unleasheable free variables])
  * To ensure that all expressions have been traversed at least once, and any left-over
    strictness annotations have been updated.
@@ -983,6 +987,7 @@ Incidentally, here's a place where lambda-lifting h would
 lose the cigar --- we couldn't see the joint strictness in t/x
 
         ON THE OTHER HAND
+
 We don't want to put *all* the fv's from the RHS into the
 DmdType. Because
  * it makes the strictness signatures, and hence slows down
@@ -995,6 +1000,12 @@ DmdType. But now the signature lies! (Missing variables are assumed to be
 absent.) To make up for this, the code that analyses the binding keeps the demand
 on those variable separate (usually called "lazy_fv") and adds it to the demand
 of the whole binding later.
+
+What if we decide not to store a strictness signature for a binding at all, as
+we do when aborting a fixed-point iteration? The we risk losing the information
+that the strict variables are being used. In that case, we take all free variables
+mentioned in the (unsound) strictness signature, conservatively approximate the
+demand put on them (topDmd), and add that to the "lazy_fv" returned by "dmdFix".
 
 
 Note [Lamba-bound unfoldings]
