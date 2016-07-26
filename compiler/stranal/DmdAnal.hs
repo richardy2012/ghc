@@ -24,6 +24,7 @@ import Data.List
 import DataCon
 import Id
 import CoreUtils        ( exprIsHNF, exprType, exprIsTrivial )
+import CoreFVs
 import TyCon
 import Type
 import Coercion         ( Coercion, coVarsOfCo )
@@ -495,11 +496,12 @@ dmdFix top_lvl env orig_pairs
     -- If fixed-point iteration does not yield a result we use this instead
     -- See Note [Safe abortion in the fixed-point iteration]
     abort :: (AnalEnv, DmdEnv, [(Id,CoreExpr)])
-    abort = (env, lazy_fv', zapped_pairs)
-      where (lazy_fv, pairs') = step True (zapIdStrictness orig_pairs)
+    abort = (env, lazy_fv, zapped_pairs)
+      where (_, pairs')  = step True (zapIdStrictness orig_pairs)
             -- Note [Lazy and unleasheable free variables]
-            non_lazy_fvs = plusVarEnvList $ map (strictSigDmdEnv . idStrictness . fst) pairs'
-            lazy_fv'     = lazy_fv `plusVarEnv` mapVarEnv (const topDmd) non_lazy_fvs
+            lazy_fv      = mkVarEnv [ (v, topDmd)
+                                    | (_,rhs) <- orig_pairs
+                                    , v <- exprFreeIdsList rhs ]
             zapped_pairs = zapIdStrictness pairs'
 
     -- The fixed-point varies the idStrictness field of the binders, and terminates if that
